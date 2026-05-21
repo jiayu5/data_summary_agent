@@ -1,0 +1,102 @@
+[
+  {
+    "question": "总共有多少乘客？",
+    "cypher": "MATCH (p:Passenger) RETURN count(p) AS total_passengers",
+    "intent": "count"
+  },
+  {
+    "question": "乘客的平均年龄是多少？",
+    "cypher": "MATCH (p:Passenger) WHERE p.age IS NOT NULL RETURN avg(p.age) AS avg_age",
+    "intent": "aggregate"
+  },
+  {
+    "question": "存活了多少乘客？",
+    "cypher": "MATCH (p:Passenger) WHERE p.survived = 1 RETURN count(p) AS survived_count",
+    "intent": "count"
+  },
+  {
+    "question": "存活率是多少？",
+    "cypher": "MATCH (p:Passenger) WITH count(p) AS total, sum(CASE WHEN p.survived = 1 THEN 1 ELSE 0 END) AS survived RETURN round(100.0 * survived / total, 2) AS survival_rate",
+    "intent": "aggregate"
+  },
+  {
+    "question": "各舱位等级的平均票价是多少？",
+    "cypher": "MATCH (p:Passenger)-[:BELONGS_TO_CLASS]->(c:Pclass) RETURN c.className AS class, round(avg(p.fare), 2) AS avg_fare ORDER BY avg_fare DESC",
+    "intent": "group_aggregate"
+  },
+  {
+    "question": "男女乘客各有多少人？",
+    "cypher": "MATCH (p:Passenger) RETURN p.sex AS gender, count(p) AS count ORDER BY count DESC",
+    "intent": "group_count"
+  },
+  {
+    "question": "女性乘客的存活率是多少？",
+    "cypher": "MATCH (p:Passenger {sex: 'female'}) WITH count(p) AS total, sum(CASE WHEN p.survived = 1 THEN 1 ELSE 0 END) AS survived RETURN round(100.0 * survived / total, 2) AS female_survival_rate",
+    "intent": "filter_aggregate"
+  },
+  {
+    "question": "男性乘客的存活率是多少？",
+    "cypher": "MATCH (p:Passenger {sex: 'male'}) WITH count(p) AS total, sum(CASE WHEN p.survived = 1 THEN 1 ELSE 0 END) AS survived RETURN round(100.0 * survived / total, 2) AS male_survival_rate",
+    "intent": "filter_aggregate"
+  },
+  {
+    "question": "票价最高的乘客是谁？",
+    "cypher": "MATCH (p:Passenger) RETURN p.name AS name, p.fare AS fare ORDER BY fare DESC LIMIT 1",
+    "intent": "top_n"
+  },
+  {
+    "question": "票价最低的乘客是谁？",
+    "cypher": "MATCH (p:Passenger) WHERE p.fare > 0 RETURN p.name AS name, p.fare AS fare ORDER BY fare ASC LIMIT 1",
+    "intent": "top_n"
+  },
+  {
+    "question": "各舱位等级的存活率分别是多少？",
+    "cypher": "MATCH (p:Passenger)-[:BELONGS_TO_CLASS]->(c:Pclass) WITH c.className AS class, count(p) AS total, sum(CASE WHEN p.survived = 1 THEN 1 ELSE 0 END) AS survived RETURN class, round(100.0 * survived / total, 2) AS survival_rate ORDER BY survival_rate DESC",
+    "intent": "group_aggregate"
+  },
+  {
+    "question": "年龄最大的乘客是谁？",
+    "cypher": "MATCH (p:Passenger) WHERE p.age IS NOT NULL RETURN p.name AS name, p.age AS age ORDER BY age DESC LIMIT 1",
+    "intent": "top_n"
+  },
+  {
+    "question": "各登船港口的乘客数量是多少？",
+    "cypher": "MATCH (p:Passenger)-[:EMBARKED_AT]->(e:Embarked) RETURN e.portName AS port, count(p) AS count ORDER BY count DESC",
+    "intent": "group_count"
+  },
+  {
+    "question": "头等舱的乘客平均年龄是多少？",
+    "cypher": "MATCH (p:Passenger)-[:BELONGS_TO_CLASS]->(c:Pclass {className: 'First'}) WHERE p.age IS NOT NULL RETURN round(avg(p.age), 2) AS avg_age",
+    "intent": "filter_aggregate"
+  },
+  {
+    "question": "三等舱中票价最贵的乘客是谁？",
+    "cypher": "MATCH (p:Passenger)-[:BELONGS_TO_CLASS]->(c:Pclass {className: 'Third'}) RETURN p.name AS name, p.fare AS fare ORDER BY fare DESC LIMIT 1",
+    "intent": "filter_top_n"
+  },
+  {
+    "question": "每个港口的男女比例是多少？",
+    "cypher": "MATCH (p:Passenger)-[:EMBARKED_AT]->(e:Embarked) RETURN e.portName AS port, p.sex AS gender, count(p) AS count ORDER BY port, gender",
+    "intent": "group_count"
+  },
+  {
+    "question": "年龄在18岁以下的乘客有多少人存活？",
+    "cypher": "MATCH (p:Passenger) WHERE p.age < 18 AND p.survived = 1 RETURN count(p) AS young_survived",
+    "intent": "filter_count"
+  },
+  {
+    "question": "票价的方差是多少？",
+    "cypher": "MATCH (p:Passenger) WHERE p.fare IS NOT NULL WITH avg(p.fare) AS mean MATCH (p:Passenger) WHERE p.fare IS NOT NULL RETURN round(avg((p.fare - mean) ^ 2), 2) AS fare_variance",
+    "intent": "aggregate"
+  },
+  {
+    "question": "存活乘客的平均票价是多少？",
+    "cypher": "MATCH (p:Passenger) WHERE p.survived = 1 RETURN round(avg(p.fare), 2) AS avg_fare_survived",
+    "intent": "filter_aggregate"
+  },
+  {
+    "question": "死亡乘客的平均票价是多少？",
+    "cypher": "MATCH (p:Passenger) WHERE p.survived = 0 RETURN round(avg(p.fare), 2) AS avg_fare_died",
+    "intent": "filter_aggregate"
+  }
+]

@@ -1,0 +1,43 @@
+{
+  "description": "Titanic 乘客知识图谱，包含乘客、舱位等级、登船港口三类节点",
+  "nodes": {
+    "Passenger": {
+      "properties": {
+        "fare": "FLOAT",
+        "ticket": "STR",
+        "sex": "STR",
+        "name": "STR",
+        "passengerId": "INT",
+        "cabin": "STR",
+        "survived": "INT",
+        "sibSp": "INT",
+        "age": "FLOAT",
+        "parch": "INT"
+      }
+    },
+    "Pclass": {
+      "properties": {
+        "classId": "INT",
+        "className": "STR"
+      }
+    },
+    "Embarked": {
+      "properties": {
+        "portName": "STR",
+        "portCode": "STR"
+      }
+    }
+  },
+  "relationships": [
+    {
+      "type": "BELONGS_TO_CLASS",
+      "from": "Passenger",
+      "to": "Pclass"
+    },
+    {
+      "type": "EMBARKED_AT",
+      "from": "Passenger",
+      "to": "Embarked"
+    }
+  ]
+}
