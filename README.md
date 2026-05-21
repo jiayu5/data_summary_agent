@@ -23,46 +23,45 @@
 数据准备           索引构建            检索+生成+可视化       ML 预测
 ─────────        ──────────         ─────────────────     ──────────
 CSV → Neo4j      Schema 提取         LangGraph 管道        训练脚本
-知识图谱构建      Text2Cypher 示例     retrieve → generate   train_model.py
-                  向量索引            → execute → viz       自然语言预测
+知识图谱构建      Text2Cypher 示例     intent → retrieve     train_model.py
+                  向量索引            → generate → viz      自然语言预测
 ```
 
 ### LangGraph 管道流程
 
 ```
-                         ┌──────────────────────────────┐
-                         │                              │
-                         ▼                              │ (retry, max 2)
-START → retrieve → intent_router → generate → execute ─┘
-                          │                       │
-                          │                       ▼
-                          │                  classify_result
-                          │                       │
-                          │              ┌────────┴────────┐
-                          │              ▼                 ▼
-                          │         generate_viz          END
-                          │              │
-                          │              ▼
-                          │         execute_viz
-                          │              │
-                          ▼              ▼
-                      predict_node      END
-                          │
-                          ▼
-                         END
+START → intent_router
+            │
+  ┌─────────┴─────────┐
+  ▼                   ▼
+retrieve         predict_node → END
+  │
+  ▼
+generate
+  │
+  ▼
+execute ─── error + retry < 2 ──→ increment_retry → generate
+  │
+  ▼ success
+classify_result
+  │
+  ├── no → END
+  │
+  └── yes → generate_viz → execute_viz → END
 ```
 
 **节点说明：**
 
 | 节点 | 职责 |
 |------|------|
-| `retrieve` | 从 ChromaDB 检索相似的 few-shot 示例，加载 Schema |
-| `intent_router` | LLM 判断意图：数据查询 (query) 或 ML 预测 (predict) |
+| `intent_router` | 入口。LLM 判断意图：数据查询 (query) 或 ML 预测 (predict) |
+| `retrieve` | query 分支：从 ChromaDB 检索相似的 few-shot 示例，加载 Schema |
 | `generate` | 拼装 Prompt（Schema + 示例 + 问题），调 LLM 生成 Cypher |
 | `execute` | 在 Neo4j 执行生成的 Cypher |
+| `increment_retry` | 递增重试计数，将错误信息追加到 prompt 让 LLM 修正 |
 | `classify_result` | LLM 判断查询结果是否适合可视化 |
 | `generate_viz` / `execute_viz` | 生成并执行 Plotly 可视化代码 |
-| `predict_node` | 从自然语言提取乘客特征，加载模型进行预测 |
+| `predict_node` | predict 分支：从自然语言提取乘客特征，加载模型进行预测 |
 
 **状态定义：**
 
@@ -209,6 +208,7 @@ print(result["prediction"])  # {"survived": 1, "probability": 0.87}
 ```
 用户: "女性乘客的存活率是多少？"
   → intent_router: "query"
+  → retrieve: 检索到相似示例（存活率查询）
   → generate: MATCH (p:Passenger {sex: 'female'}) ...
   → execute: [{"female_survival_rate": 74.2}]
   → classify: 不适合画图 → END

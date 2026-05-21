@@ -52,7 +52,6 @@ def retrieve(state: QueryState) -> dict:
         "system_prompt": system_prompt,
         "retry_count": 0,
         "error": "",
-        "intent": "",
         "prediction": {},
     }
 
@@ -186,19 +185,19 @@ def build_graph() -> StateGraph:
     graph.add_node("predict_node", predict_node)
 
     # Edges
-    graph.set_entry_point("retrieve")
-    graph.add_edge("retrieve", "intent_router")
+    graph.set_entry_point("intent_router")
+    graph.add_edge("retrieve", "generate")
     graph.add_edge("generate", "execute")
     graph.add_edge("increment_retry", "generate")
     graph.add_edge("generate_viz", "execute_viz")
     graph.add_edge("execute_viz", END)
     graph.add_edge("predict_node", END)
 
-    # Conditional: intent_router → query or predict
+    # Conditional: intent_router → retrieve (query) or predict
     graph.add_conditional_edges(
         "intent_router",
         route_after_intent,
-        {"query": "generate", "predict": "predict_node"},
+        {"query": "retrieve", "predict": "predict_node"},
     )
 
     # Conditional: execute → retry or classify
